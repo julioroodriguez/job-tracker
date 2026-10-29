@@ -7,9 +7,10 @@ import { JobDetailPage } from "./pages/JobDetailPage";
 import { BoardPage } from "./pages/BoardPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
+
 function App() {
   return (
-    
+
         <Routes>
   <Route
     path="/"
@@ -53,7 +54,7 @@ function App() {
     element={<NotFoundPage />}
   />
 </Routes>
-       
+
  
   );
 }
