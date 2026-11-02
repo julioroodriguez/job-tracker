@@ -6,17 +6,26 @@ import { JobFormPahe } from "./pages/JobFormPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
 import { BoardPage } from "./pages/BoardPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { RegisterPage } from "./pages/RegisterPage";
+import { LoginPage } from "./pages/LoginPage";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 
 function App() {
   return (
 
         <Routes>
-  <Route
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+    path="/register"
+    element={<RegisterPage />}
+  />
+  
+<Route element={<ProtectedRoute />}>
+<Route
     path="/"
     element={<Navigate to="/dashboard" replace />}
   />
-
   <Route element={<AppLayout />}>
     <Route
       path="/dashboard"
@@ -48,11 +57,13 @@ function App() {
       element={<BoardPage />}
     />
   </Route>
-
   <Route
     path="*"
     element={<NotFoundPage />}
   />
+</Route>
+  
+  
 </Routes>
 
  
