@@ -9,6 +9,7 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { JobFormPracticePage } from "./pages/JobFormPracticePage";
 
 
 function App() {
@@ -31,7 +32,10 @@ function App() {
       path="/dashboard"
       element={<DashboardPage />}
     />
-
+  <Route
+  path="/practice/job-form"
+  element={<JobFormPracticePage />}
+/>
     <Route
       path="/jobs"
       element={<JobsPage />}
