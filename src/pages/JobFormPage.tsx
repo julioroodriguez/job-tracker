@@ -1,176 +1,187 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { getJobById, updateJob, createJob } from "../services/jobsService";
-import { useState, useEffect } from "react";
-import type { JobStatus } from "../types/job";
-import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import {
+  jobFormSchema,
+  type JobFormValues,
+} from "../features/jobs/jobFormSchema";
+
+import {
+  createJob,
+  getJobById,
+  updateJob,
+} from "../services/jobsService";
 
 export function JobFormPahe() {
-
   const { id } = useParams<{ id: string }>();
-  const [company, setCompany] = useState("");
-  const [position, setPosition] = useState("");
-  const [status, setStatus] = useState<JobStatus>("pending");
-  const [location, setLocation] = useState("");
-
-  const [loading, setLoading] = useState(Boolean(id));
-  const [errorMessage, setErrorMessage] = useState("");
-
   const navigate = useNavigate();
 
-const [saving, setSaving] = useState(false);
-const [saveError, setSaveError] = useState("");
+  const [loading, setLoading] = useState(Boolean(id));
+  const [loadError, setLoadError] = useState("");
+  const [saveError, setSaveError] = useState("");
 
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<JobFormValues>({
+    resolver: zodResolver(jobFormSchema),
+    defaultValues: {
+      company: "",
+      position: "",
+      status: "pending",
+      location: "",
+      work_mode: "hybrid",
+    },
+  });
+
+  // Precargar datos cuando estamos editando
   useEffect(() => {
-    
-  if (!id) return;
+    if (!id) return;
 
-  const jobId = id;
-  let cancelled = false;
+    const jobId = id;
+    let cancelled = false;
 
-  async function loadJob() {
+    async function loadJob() {
+      try {
+        const job = await getJobById(jobId);
+
+        if (cancelled) return;
+
+        if (!job) {
+          setLoadError("Candidatura no encontrada.");
+          return;
+        }
+
+        const values = jobFormSchema.parse({
+          company: job.company,
+          position: job.position,
+          status: job.status,
+          location: job.location,
+          work_mode: job.work_mode,
+        });
+
+        reset(values);
+      } catch (error) {
+        if (!cancelled) {
+          console.error(error);
+          setLoadError("Error al cargar la candidatura.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadJob();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, reset]);
+
+  // Crear o editar según exista un ID
+  async function onValidSubmit(values: JobFormValues) {
+    setSaveError("");
+
     try {
-      const job = await getJobById(jobId);
-
-      if (cancelled) return;
-
-      if (!job) {
-        setErrorMessage("Candidatura no encontrada.");
-        return;
+      if (id) {
+        await updateJob(id, values);
+        navigate(`/jobs/${id}`);
+      } else {
+        const newJob = await createJob(values);
+        navigate(`/jobs/${newJob.id}`);
       }
-
-      setCompany(job.company);
-      setPosition(job.position);
-      setStatus(job.status as JobStatus);
-      setLocation(job.location);
     } catch (error) {
-      if (!cancelled) {
-        console.error(error);
-        setErrorMessage("Error al cargar la candidatura.");
-      }
-    } finally {
-      if (!cancelled) {
-        setLoading(false);
-      }
+      console.error("Error al guardar:", error);
+      setSaveError("No se pudo guardar la candidatura.");
     }
   }
 
-  loadJob();
-
-
-
-  return () => {
-    cancelled = true;
-  };
-}, [id]);
-
-async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-  event.preventDefault();
-
-  if (!company.trim() || !position.trim() || !location.trim()) {
-    setSaveError("Todos los campos son obligatorios.");
-    return;
+  if (id && loading) {
+    return <p>Cargando candidatura...</p>;
   }
 
-  setSaving(true);
-  setSaveError("");
-
-  try {
-  if (id) {
-    // EDITAR una candidatura existente
-    await updateJob(id, {
-      company: company.trim(),
-      position: position.trim(),
-      status,
-      location: location.trim(),
-    });
-
-    navigate(`/jobs/${id}`);
-  } else {
-    // CREAR una candidatura nueva
-    const newJob = await createJob({
-      company: company.trim(),
-      position: position.trim(),
-      status,
-      location: location.trim(),
-      work_mode: "hybrid",
-    });
-
-    navigate(`/jobs/${newJob.id}`);
+  if (id && loadError) {
+    return <p role="alert">{loadError}</p>;
   }
-} catch (error) {
-    console.error("Error al actualizar:", error);
-    setSaveError("No se pudieron guardar los cambios.");
-  } finally {
-    setSaving(false);
-  }
-}
-if (id && loading) {
-  return <p>Cargando candidatura...</p>;
-}
 
-if (id && errorMessage) {
-  return <p role="alert">{errorMessage}</p>;
-}
   return (
-    
     <section>
       <h1>
         {id ? "Editar candidatura" : "Nueva candidatura"}
       </h1>
-      <form onSubmit={handleSubmit}>
-  <label>
-    Empresa
-    <input
-      value={company}
-      onChange={(event) => setCompany(event.target.value)}
-    />
-  </label>
 
-  <label>
-    Puesto
-    <input
-      value={position}
-      onChange={(event) => setPosition(event.target.value)}
-    />
-  </label>
+      <form noValidate onSubmit={handleSubmit(onValidSubmit)}>
+        <label>
+          Empresa
+          <input {...register("company")} />
+        </label>
+        {errors.company && (
+          <p className="form-error" role="alert">
+            {errors.company.message}
+          </p>
+        )}
 
-  <label>
-    Estado
-    <select
-      value={status}
-      onChange={(event) =>
-        setStatus(event.target.value as JobStatus)
-      }
-    >
-      <option value="pending">Pendiente</option>
-      <option value="applied">Aplicada</option>
-      <option value="interview">Entrevista</option>
-      <option value="technical_test">Prueba técnica</option>
-      <option value="offer">Oferta</option>
-      <option value="rejected">Rechazada</option>
-    </select>
-  </label>
+        <label>
+          Puesto
+          <input {...register("position")} />
+        </label>
+        {errors.position && (
+          <p className="form-error" role="alert">
+            {errors.position.message}
+          </p>
+        )}
 
-  <label>
-    Ubicación
-    <input
-      value={location}
-      onChange={(event) => setLocation(event.target.value)}
-    />
-  </label>
-  
-  {saveError && <p role="alert">{saveError}</p>}
+        <label>
+          Estado
+          <select {...register("status")}>
+            <option value="pending">Pendiente</option>
+            <option value="applied">Aplicada</option>
+            <option value="interview">Entrevista</option>
+            <option value="technical_test">Prueba técnica</option>
+            <option value="offer">Oferta</option>
+            <option value="rejected">Rechazada</option>
+          </select>
+        </label>
 
+        <label>
+          Ubicación
+          <input {...register("location")} />
+        </label>
+        {errors.location && (
+          <p className="form-error" role="alert">
+            {errors.location.message}
+          </p>
+        )}
 
-  <button type="submit" disabled={saving}>
-  {saving
-    ? "Guardando..."
-    : id
-      ? "Guardar cambios"
-      : "Crear candidatura"}
-</button>
+        <label>
+          Modalidad
+          <select {...register("work_mode")}>
+            <option value="remote">Remoto</option>
+            <option value="hybrid">Híbrido</option>
+            <option value="onsite">Presencial</option>
+          </select>
+        </label>
 
-</form>
+        {saveError && (
+          <p className="form-error" role="alert">
+            {saveError}
+          </p>
+        )}
+
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting
+            ? "Guardando..."
+            : id
+              ? "Guardar cambios"
+              : "Crear candidatura"}
+        </button>
+      </form>
     </section>
   );
 }

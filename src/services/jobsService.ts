@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import type { JobStatus, workMode } from "../types/job";
 
 type NewJob = {
   company: string;
@@ -49,7 +50,6 @@ export async function getJobById(id: string) {
   return data;
 }
 
-import type { JobStatus } from "../types/job";
 
 // Añade este tipo y la función al servicio.
 
@@ -58,6 +58,7 @@ type UpdateJobData = {
   position?: string;
   status?: JobStatus;
   location?: string;
+  work_mode?: workMode;
 };
 
 export async function updateJob(
