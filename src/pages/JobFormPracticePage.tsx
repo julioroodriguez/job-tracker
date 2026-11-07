@@ -1,15 +1,22 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { getJobById } from "../services/jobsService";
 import {
   jobFormSchema,
   type JobFormValues,
 } from "../features/jobs/jobFormSchema";
 
 export function JobFormPracticePage() {
+  const { id } = useParams<{ id: string }>();
+
+const [loading, setLoading] = useState(Boolean(id));
+const [loadError, setLoadError] = useState("");
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<JobFormValues>({
     resolver: zodResolver(jobFormSchema),
@@ -22,8 +29,63 @@ export function JobFormPracticePage() {
     },
   });
 
+  useEffect(() => {
+    if (!id) return;
+  
+    const jobId = id;
+    let cancelled = false;
+  
+    async function loadJob() {
+      try {
+        const job = await getJobById(jobId);
+  
+        if (cancelled) return;
+  
+        if (!job) {
+          setLoadError("Candidatura no encontrada.");
+          return;
+        }
+  
+        const values = jobFormSchema.parse({
+          company: job.company,
+          position: job.position,
+          status: job.status,
+          location: job.location,
+          work_mode: job.work_mode,
+        });
+  
+        reset(values);
+      } catch (error) {
+        if (!cancelled) {
+          console.error(error);
+          setLoadError("No se pudo cargar la candidatura.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+  
+    loadJob();
+  
+    
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, reset]);
+
   function onValidSubmit(data: JobFormValues) {
     console.log("Datos válidos:", data);
+  }
+
+  if (loading) {
+    return <p>Cargando candidatura...</p>;
+  }
+  
+  if (loadError) {
+    return <p role="alert">{loadError}</p>;
   }
 
   return (
@@ -84,6 +146,9 @@ export function JobFormPracticePage() {
 
         <button type="submit" disabled={isSubmitting}>
   Validar formulario
+</button>
+<button type="button" onClick={() => reset()}>
+  Descartar cambios
 </button>
       </form>
     </section>

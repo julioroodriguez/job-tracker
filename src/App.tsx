@@ -36,6 +36,10 @@ function App() {
   path="/practice/job-form"
   element={<JobFormPracticePage />}
 />
+<Route
+  path="/practice/job-form/:id"
+  element={<JobFormPracticePage />}
+/>
     <Route
       path="/jobs"
       element={<JobsPage />}
