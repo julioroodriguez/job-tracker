@@ -82,14 +82,60 @@ async function handleDelete() {
   return (
     <section>
       <Link to="/jobs">Volver a candidaturas</Link>
+<h1>{job.company}</h1>
+<h2>{job.position}</h2>
 
-      <h1>{job.company}</h1>
-      <h2>{job.position}</h2>
+<p>Estado: {job.status}</p>
+<p>Ubicación: {job.location}</p>
+<p>Modalidad: {job.work_mode}</p>
 
-      <p>Estado: {job.status}</p>
-      <p>Ubicación: {job.location}</p>
-      <p>Modalidad: {job.work_mode}</p>
-      <p>Notas: {job.notes ?? "Sin notas"}</p>
+<h3>Notas</h3>
+<p>{job.notes || "Sin notas"}</p>
+      {job.job_url && (
+  <p>
+    Oferta:{" "}
+    <a
+      href={job.job_url}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Ver oferta original
+    </a>
+  </p>
+)}
+
+{(job.salary_min !== null || job.salary_max !== null) && (
+  <p>
+    Salario bruto anual: {job.salary_min ?? "Sin mínimo"} -
+    {" "}{job.salary_max ?? "Sin máximo"}
+    {" "}{job.currency ?? ""}
+  </p>
+)}
+
+{job.technologies.length > 0 && (
+  <div>
+    <h3>Tecnologías</h3>
+    <ul>
+      {job.technologies.map((tech: string) => (
+        <li key={tech}>{tech}</li>
+      ))}
+    </ul>
+  </div>
+)}
+
+{job.next_action && (
+  <p>Próxima acción: {job.next_action}</p>
+)}
+
+{job.next_action_at && (
+  <p>
+    Fecha de seguimiento:{" "}
+    {new Date(job.next_action_at).toLocaleString("es-ES", {
+      dateStyle: "short",
+      timeStyle: "short",
+    })}
+  </p>
+)}
 
       <Link to={`/jobs/${job.id}/edit`}>
         Editar candidatura
@@ -102,22 +148,6 @@ async function handleDelete() {
   disabled={deleting}
 >
   {deleting ? "Eliminando..." : "Eliminar candidatura"}
-</button>
-      <button
-  type="button"
-  onClick={async () => {
-    try {
-      const updatedJob = await updateJob(job.id, {
-        status: "interview",
-      });
-
-      setJob(updatedJob);
-    } catch (error) {
-      console.error("Error actualizando candidatura:", error);
-    }
-  }}
->
-  Marcar como entrevista (prueba)
 </button>
     </section>
   );

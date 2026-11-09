@@ -7,6 +7,14 @@ type NewJob = {
   location: string;
   work_mode: "remote" | "hybrid" | "onsite";
   status?: JobStatus;
+  job_url?: string | null;
+notes?: string | null;
+salary_min?: number | null;
+salary_max?: number | null;
+currency?: string | null;
+technologies?: string[];
+next_action?: string | null;
+next_action_at?: string | null;
 };
 
 export async function createJob(job: NewJob) {
@@ -59,6 +67,14 @@ type UpdateJobData = {
   status?: JobStatus;
   location?: string;
   work_mode?: workMode;
+  job_url?: string | null;
+notes?: string | null;
+salary_min?: number | null;
+salary_max?: number | null;
+currency?: string | null;
+technologies?: string[];
+next_action?: string | null;
+next_action_at?: string | null;
 };
 
 export async function updateJob(
