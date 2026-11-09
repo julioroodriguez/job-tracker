@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import type { JobStatus, workMode } from "../types/job";
 
 type NewJob = {
   company: string;
@@ -6,6 +7,14 @@ type NewJob = {
   location: string;
   work_mode: "remote" | "hybrid" | "onsite";
   status?: JobStatus;
+  job_url?: string | null;
+notes?: string | null;
+salary_min?: number | null;
+salary_max?: number | null;
+currency?: string | null;
+technologies?: string[];
+next_action?: string | null;
+next_action_at?: string | null;
 };
 
 export async function createJob(job: NewJob) {
@@ -49,7 +58,6 @@ export async function getJobById(id: string) {
   return data;
 }
 
-import type { JobStatus } from "../types/job";
 
 // Añade este tipo y la función al servicio.
 
@@ -58,6 +66,15 @@ type UpdateJobData = {
   position?: string;
   status?: JobStatus;
   location?: string;
+  work_mode?: workMode;
+  job_url?: string | null;
+notes?: string | null;
+salary_min?: number | null;
+salary_max?: number | null;
+currency?: string | null;
+technologies?: string[];
+next_action?: string | null;
+next_action_at?: string | null;
 };
 
 export async function updateJob(

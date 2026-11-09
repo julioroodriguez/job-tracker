@@ -101,3 +101,12 @@ body {
     padding: 16px;
   }
 }
+
+.form-error {
+  color: #dc2626;
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
