@@ -1,68 +1,68 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+
+import { useAuth } from "../hooks/useAuth";
 import { getJobs } from "../services/jobsService";
+import type { Job } from "../types/job";
 
-export function JobsPage(){
+type JobListItem = Pick<
+  Job,
+  "id" | "company" | "position" | "status" | "location"
+>;
 
-const [jobs, setJobs] = useState<Awaited<ReturnType<typeof getJobs>>>([]);
-const [loading, setLoading] = useState(true);
-const [errorMessage, setErrorMessage] = useState("");
+export function JobsPage() {
+  const { session } = useAuth();
+  const userId = session?.user.id;
 
-useEffect(() => {
-  let cancelled = false;
+  const {
+    data,
+    isPending,
+    isError,
+    isFetching,
+    error,
+  } = useQuery({
+    queryKey: ["jobs", userId],
+    queryFn: getJobs,
+    enabled: Boolean(userId),
+  });
 
-  async function loadJobs() {
-    try {
-      const data = await getJobs();
+  const jobs: JobListItem[] = data ?? [];
 
-      if (!cancelled) {
-        setJobs(data);
-      }
-    } catch (error) {
-      if (!cancelled) {
-        setErrorMessage("No se pudieron cargar las candidaturas.");
-        console.error(error);
-      }
-    } finally {
-      if (!cancelled) {
-        setLoading(false);
-      }
-    }
-  }
-
-  loadJobs();
-
-  return () => {
-    cancelled = true;
-  };
-}, []);
-
-    return (
+  return (
     <section>
       <h1>Candidaturas</h1>
-      <p>Todavía no hay candidaturas.</p>
-      <p>
-        <Link to={"/jobs/new"}>Nueva candidatura</Link>
-        </p>
-        {loading ? (
-  <p>Cargando candidaturas...</p>
-) : errorMessage ? (
-  <p role="alert">{errorMessage}</p>
-) : jobs.length === 0 ? (
-  <p>Todavía no tienes candidaturas.</p>
-) : (
-  <ul>
-    {jobs.map((job) => (
-     
-  <Link to={`/jobs/${job.id}`}>
-    <strong>{job.company}</strong>
-    <p>{job.position}</p>
-    <p>{job.status}</p>
-  </Link>
 
-    ))}
-  </ul>
-)}
+      <p>
+        <Link to="/jobs/new">Nueva candidatura</Link>
+      </p>
+
+      {isPending ? (
+        <p>Cargando candidaturas...</p>
+      ) : isError ? (
+        <div role="alert">
+          <p>No se pudieron cargar las candidaturas.</p>
+          <p>{error.message}</p>
+        </div>
+      ) : jobs.length === 0 ? (
+        <p>Todavía no tienes candidaturas.</p>
+      ) : (
+        <>
+          {isFetching && <p>Actualizando candidaturas...</p>}
+
+          <ul>
+            {jobs.map((job) => (
+              <li key={job.id}>
+                <Link to={`/jobs/${job.id}`}>
+                  <strong>{job.company}</strong>
+                  <p>{job.position}</p>
+                  <p>Estado: {job.status}</p>
+                  <p>Ubicación: {job.location}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </section>
   );
 }

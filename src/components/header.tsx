@@ -1,10 +1,12 @@
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
-
+import { useQueryClient } from "@tanstack/react-query";
 
 
 
 export function Header(){
+
+const queryClient = useQueryClient();
 
     const navigate = useNavigate();
 async function handleLogout() {
@@ -14,8 +16,10 @@ async function handleLogout() {
     console.error(error);
     return;
   }
+await queryClient.cancelQueries();
+queryClient.clear();
 
-  navigate("/login");
+navigate("/login", { replace: true });
 }
 
 

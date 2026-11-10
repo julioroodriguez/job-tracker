@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getJobById, updateJob } from "../services/jobsService";
+import { getJobById } from "../services/jobsService";
 import { useNavigate } from "react-router-dom";
 import { deleteJob } from "../services/jobsService";
 
