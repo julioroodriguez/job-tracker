@@ -40,16 +40,17 @@ const [sortOption, setSortOption] =
 
   // Obtener candidaturas desde TanStack Query
   const {
-    data,
-    isPending,
-    isError,
-    isFetching,
-    error,
-  } = useQuery({
-    queryKey: ["jobs", userId],
-    queryFn: getJobs,
-    enabled: Boolean(userId),
-  });
+  data,
+  isPending,
+  isError,
+  isFetching,
+  error,
+  refetch,
+} = useQuery({
+  queryKey: ["jobs", userId],
+  queryFn: getJobs,
+  enabled: Boolean(userId),
+});
 
   const jobs: JobListItem[] = data ?? [];
 
@@ -133,7 +134,11 @@ const [sortOption, setSortOption] =
         <div role="alert">
           <p>No se pudieron cargar las candidaturas.</p>
           <p>{error.message}</p>
+          <button type="button" onClick={() => void refetch()}>
+  Reintentar
+</button>
         </div>
+        
       ) : (
         <>
           {/* BUSCADOR */}
@@ -236,10 +241,14 @@ const [sortOption, setSortOption] =
           )}
 
           {jobs.length === 0 ? (
-            <p>Todavía no tienes candidaturas.</p>
-          ) : filteredJobs.length === 0 ? (
-            <p>No hay candidaturas que coincidan con los filtros.</p>
-          ) : (
+  <div>
+    <p>No hay candidaturas que coincidan con los filtros.</p>
+
+    <button type="button" onClick={clearFilters}>
+      Mostrar todas las candidaturas
+    </button>
+  </div>
+) : (
             <ul>
               {sortedJobs.map((job) => (
                 <li key={job.id}>
