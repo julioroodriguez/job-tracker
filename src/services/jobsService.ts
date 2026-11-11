@@ -34,7 +34,16 @@ export async function createJob(job: NewJob) {
 export async function getJobs() {
   const { data, error } = await supabase
     .from("jobs")
-    .select("id, company, position, status, location, work_mode")
+    .select(`
+      id,
+      company,
+      position,
+      status,
+      location,
+      work_mode,
+      technologies,
+      created_at
+    `)
     .order("created_at", { ascending: false });
 
   if (error) {
