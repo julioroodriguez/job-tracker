@@ -240,7 +240,9 @@ const [sortOption, setSortOption] =
             <p>Actualizando candidaturas...</p>
           )}
 
-          {jobs.length === 0 ? (
+        {jobs.length === 0 ? (
+  <p>Todavía no tienes candidaturas.</p>
+) : sortedJobs.length === 0 ? (
   <div>
     <p>No hay candidaturas que coincidan con los filtros.</p>
 
@@ -249,20 +251,20 @@ const [sortOption, setSortOption] =
     </button>
   </div>
 ) : (
-            <ul>
-              {sortedJobs.map((job) => (
-                <li key={job.id}>
-                  <Link to={`/jobs/${job.id}`}>
-                    <strong>{job.company}</strong>
-                    <p>{job.position}</p>
-                    <p>Estado: {job.status}</p>
-                    <p>Ubicación: {job.location}</p>
-                    <p>Modalidad: {job.work_mode}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+  <ul>
+    {sortedJobs.map((job) => (
+      <li key={job.id}>
+        <Link to={`/jobs/${job.id}`}>
+          <strong>{job.company}</strong>
+          <p>{job.position}</p>
+          <p>Estado: {job.status}</p>
+          <p>Ubicación: {job.location}</p>
+          <p>Modalidad: {job.work_mode}</p>
+        </Link>
+      </li>
+    ))}
+  </ul>
+)}
         </>
       )}
     </section>
