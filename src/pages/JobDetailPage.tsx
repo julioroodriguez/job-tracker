@@ -6,6 +6,17 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getJobById, deleteJob } from "../services/jobsService";
 import { useAuth } from "../hooks/useAuth";
 
+import { getJobStatusHistory } from "../services/jobHistoryService";
+
+const statusLabels: Record<string, string> = {
+  pending: "Pendiente",
+  applied: "Aplicada",
+  interview: "Entrevista",
+  technical_test: "Prueba técnica",
+  offer: "Oferta",
+  rejected: "Rechazada",
+};
+
 export function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -35,6 +46,25 @@ export function JobDetailPage() {
     enabled: Boolean(userId && id),
   });
 
+  const {
+  data: history = [],
+  isPending: historyLoading,
+  isError: historyError,
+  refetch: refetchHistory,
+} = useQuery({
+  queryKey: ["job-status-history", userId, id],
+
+  queryFn: () => {
+    if (!id) {
+      throw new Error("ID de candidatura no válido");
+    }
+
+    return getJobStatusHistory(id);
+  },
+
+  enabled: Boolean(userId && id),
+});
+
   async function handleDelete() {
     if (!job || deleting) return;
 
@@ -49,6 +79,11 @@ export function JobDetailPage() {
 
     try {
       await deleteJob(job.id);
+
+      queryClient.removeQueries({
+  queryKey: ["job-status-history", userId, job.id],
+  exact: true,
+});
 
       await queryClient.invalidateQueries({
         queryKey: ["jobs", userId],
@@ -143,7 +178,48 @@ export function JobDetailPage() {
           })}
         </p>
       )}
+<section aria-labelledby="history-title">
+  <h3 id="history-title">Historial de estados</h3>
 
+  {historyLoading ? (
+    <p>Cargando historial...</p>
+  ) : historyError ? (
+    <div role="alert">
+      <p>No se pudo cargar el historial.</p>
+
+      <button
+        type="button"
+        onClick={() => void refetchHistory()}
+      >
+        Reintentar
+      </button>
+    </div>
+  ) : history.length === 0 ? (
+    <p>Todavía no hay cambios de estado registrados.</p>
+  ) : (
+    <ol>
+      {history.map((entry) => (
+        <li key={entry.id}>
+          <p>
+            {statusLabels[entry.old_status] ?? entry.old_status}
+            {" → "}
+            {statusLabels[entry.new_status] ?? entry.new_status}
+          </p>
+
+          <small>
+            {new Date(entry.changed_at).toLocaleString(
+              "es-ES",
+              {
+                dateStyle: "short",
+                timeStyle: "short",
+              }
+            )}
+          </small>
+        </li>
+      ))}
+    </ol>
+  )}
+</section>
       <Link to={`/jobs/${job.id}/edit`}>
         Editar candidatura
       </Link>

@@ -191,17 +191,24 @@ export function BoardPage() {
   },
 
   onSettled: async (_data, _error, variables) => {
-    // Sincronizar el listado con PostgreSQL
-    await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: jobsKey,
-      }),
+  await Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: jobsKey,
+    }),
 
-      queryClient.invalidateQueries({
-        queryKey: ["job", userId, variables.jobId],
-      }),
-    ]);
-  },
+    queryClient.invalidateQueries({
+      queryKey: ["job", userId, variables.jobId],
+    }),
+
+    queryClient.invalidateQueries({
+      queryKey: [
+        "job-status-history",
+        userId,
+        variables.jobId,
+      ],
+    }),
+  ]);
+},
 });
 
   const jobs: BoardJob[] = data ?? [];

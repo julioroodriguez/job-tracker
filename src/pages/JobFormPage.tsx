@@ -200,6 +200,9 @@ export function JobFormPahe() {
           queryClient.invalidateQueries({
             queryKey: ["job", userId, id],
           }),
+          queryClient.invalidateQueries({
+  queryKey: ["job-status-history", userId, id],
+}),
         ]);
 
         navigate(`/jobs/${id}`);
