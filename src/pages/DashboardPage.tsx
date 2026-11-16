@@ -8,9 +8,32 @@ import type { JobStatus } from "../types/job";
 
 import "../styles/dashboard.css";
 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
+
 type DashboardJob = {
   status: JobStatus;
 };
+
+
+const jobStatuses: {
+  value: JobStatus;
+  label: string;
+}[] = [
+  { value: "pending", label: "Pendiente" },
+  { value: "applied", label: "Aplicada" },
+  { value: "interview", label: "Entrevista" },
+  { value: "technical_test", label: "Prueba técnica" },
+  { value: "offer", label: "Oferta" },
+  { value: "rejected", label: "Rechazada" },
+];
+
 
 export function DashboardPage() {
   const { session } = useAuth();
@@ -28,6 +51,15 @@ export function DashboardPage() {
   });
 
   const jobs: DashboardJob[] = data ?? [];
+
+
+const statusChartData = jobStatuses.map((status) => ({
+  status: status.label,
+  total: jobs.filter(
+    (job) => job.status === status.value
+  ).length,
+}));
+
 
   // KPIs calculados a partir de las candidaturas
   const totalJobs = jobs.length;
@@ -107,6 +139,65 @@ export function DashboardPage() {
           </p>
         </article>
       </div>
+
+
+<section
+  className="dashboard-chart-card"
+  aria-labelledby="status-chart-title"
+>
+  <h2 id="status-chart-title">
+    Candidaturas por estado
+  </h2>
+
+  {totalJobs === 0 ? (
+    <p>
+      Añade candidaturas para visualizar las
+      estadísticas por estado.
+    </p>
+  ) : (
+    <BarChart
+      responsive
+      layout="vertical"
+      data={statusChartData}
+      style={{
+        width: "100%",
+        height: 360,
+      }}
+      margin={{
+        top: 10,
+        right: 25,
+        bottom: 10,
+        left: 10,
+      }}
+    >
+      <CartesianGrid
+        strokeDasharray="3 3"
+        horizontal={false}
+      />
+
+      <XAxis
+        type="number"
+        allowDecimals={false}
+      />
+
+      <YAxis
+        dataKey="status"
+        type="category"
+        width={110}
+      />
+
+      <Tooltip />
+
+      <Bar
+        dataKey="total"
+        name="Candidaturas"
+        fill="#2563eb"
+        radius={[0, 6, 6, 0]}
+      />
+    </BarChart>
+  )}
+</section>
+
 
       {totalJobs === 0 && (
         <div className="dashboard-empty">
