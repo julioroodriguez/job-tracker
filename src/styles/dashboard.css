@@ -75,3 +75,10 @@
     padding: 16px 8px;
   }
 }
+
+.dashboard-chart-description {
+  color: #64748b;
+  font-size: 14px;
+  margin: -12px 0 24px;
+  line-height: 1.5;
+}

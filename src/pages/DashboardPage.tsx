@@ -15,10 +15,13 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  LineChart,
+  Line,
 } from "recharts";
 
 type DashboardJob = {
   status: JobStatus;
+  created_at: string;
 };
 
 
@@ -33,6 +36,55 @@ const jobStatuses: {
   { value: "offer", label: "Oferta" },
   { value: "rejected", label: "Rechazada" },
 ];
+
+
+function buildWeeklyActivity(jobs: DashboardJob[]) {
+  const today = new Date();
+
+  // Obtener el lunes de la semana actual
+  const currentMonday = new Date(today);
+  currentMonday.setHours(0, 0, 0, 0);
+
+  const daysSinceMonday =
+    (currentMonday.getDay() + 6) % 7;
+
+  currentMonday.setDate(
+    currentMonday.getDate() - daysSinceMonday
+  );
+
+  // Crear las ocho semanas, de la más antigua
+  // a la más reciente
+  return Array.from({ length: 8 }, (_, index) => {
+    const weekStart = new Date(currentMonday);
+
+    weekStart.setDate(
+      currentMonday.getDate() - (7 - index) * 7
+    );
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+
+    // Contar candidaturas creadas en esa semana
+    const registered = jobs.filter((job) => {
+      const createdTime = new Date(
+        job.created_at
+      ).getTime();
+
+      return (
+        createdTime >= weekStart.getTime() &&
+        createdTime < weekEnd.getTime()
+      );
+    }).length;
+
+    return {
+      week: weekStart.toLocaleDateString("es-ES", {
+        day: "2-digit",
+        month: "short",
+      }),
+      registered,
+    };
+  });
+}
 
 
 export function DashboardPage() {
@@ -52,6 +104,11 @@ export function DashboardPage() {
 
   const jobs: DashboardJob[] = data ?? [];
 
+  const weeklyActivityData = buildWeeklyActivity(jobs);
+
+const hasRecentActivity = weeklyActivityData.some(
+  (week) => week.registered > 0
+);
 
 const statusChartData = jobStatuses.map((status) => ({
   status: status.label,
@@ -195,6 +252,67 @@ const statusChartData = jobStatuses.map((status) => ({
         radius={[0, 6, 6, 0]}
       />
     </BarChart>
+  )}
+</section>
+
+<section
+  className="dashboard-chart-card"
+  aria-labelledby="weekly-activity-title"
+>
+  <h2 id="weekly-activity-title">
+    Evolución semanal
+  </h2>
+
+  <p className="dashboard-chart-description">
+    Candidaturas registradas durante las últimas
+    ocho semanas, incluida la semana actual.
+  </p>
+
+  {!hasRecentActivity ? (
+    <p>
+      No se han registrado candidaturas durante
+      las últimas ocho semanas.
+    </p>
+  ) : (
+    <LineChart
+      responsive
+      data={weeklyActivityData}
+      style={{
+        width: "100%",
+        height: 320,
+      }}
+      margin={{
+        top: 20,
+        right: 20,
+        bottom: 10,
+        left: 0,
+      }}
+    >
+      <CartesianGrid strokeDasharray="3 3" />
+
+      <XAxis
+        dataKey="week"
+        tickMargin={8}
+        minTickGap={12}
+      />
+
+      <YAxis
+        allowDecimals={false}
+        width={35}
+      />
+
+      <Tooltip />
+
+      <Line
+        type="monotone"
+        dataKey="registered"
+        name="Candidaturas"
+        stroke="#2563eb"
+        strokeWidth={3}
+        dot={{ r: 4 }}
+        activeDot={{ r: 6 }}
+      />
+    </LineChart>
   )}
 </section>
 
