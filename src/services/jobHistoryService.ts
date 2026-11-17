@@ -23,3 +23,21 @@ export async function getJobStatusHistory(
 
   return data ?? [];
 }
+
+export type JobHistorySummary = Pick<
+  JobStatusHistoryEntry,
+  "job_id" | "old_status" | "new_status"
+>;
+
+export async function getAllJobStatusHistory():
+  Promise<JobHistorySummary[]> {
+  const { data, error } = await supabase
+    .from("job_status_history")
+    .select("job_id, old_status, new_status");
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
