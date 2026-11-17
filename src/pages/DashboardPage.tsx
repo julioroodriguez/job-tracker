@@ -19,7 +19,11 @@ import {
   Line,
 } from "recharts";
 
+import { useState } from "react";
+import { getAllJobStatusHistory } from "../services/jobHistoryService";
+
 type DashboardJob = {
+  id: string;
   status: JobStatus;
   created_at: string;
 };
@@ -86,6 +90,7 @@ function buildWeeklyActivity(jobs: DashboardJob[]) {
   });
 }
 
+type DashboardPeriod = "all" | "30" | "90";
 
 export function DashboardPage() {
   const { session } = useAuth();
@@ -102,7 +107,45 @@ export function DashboardPage() {
     enabled: Boolean(userId),
   });
 
+  
+const [period, setPeriod] =
+  useState<DashboardPeriod>("all");
+
+const [referenceTime] = useState(() => Date.now());
+
+const {
+  data: history = [],
+  isPending: historyLoading,
+  isError: historyError,
+  refetch: refetchHistory,
+} = useQuery({
+  queryKey: ["all-job-status-history", userId],
+  queryFn: getAllJobStatusHistory,
+  enabled: Boolean(userId),
+});
+
+
   const jobs: DashboardJob[] = data ?? [];
+
+
+const periodJobs = jobs.filter((job) => {
+  if (period === "all") {
+    return true;
+  }
+
+  const days = Number(period);
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+  const cutoff =
+    referenceTime - days * millisecondsPerDay;
+
+  const createdAt = new Date(
+    job.created_at
+  ).getTime();
+
+  return createdAt >= cutoff;
+});
+
 
   const weeklyActivityData = buildWeeklyActivity(jobs);
 
@@ -112,26 +155,87 @@ const hasRecentActivity = weeklyActivityData.some(
 
 const statusChartData = jobStatuses.map((status) => ({
   status: status.label,
-  total: jobs.filter(
+  total: periodJobs.filter(
     (job) => job.status === status.value
   ).length,
 }));
 
 
   // KPIs calculados a partir de las candidaturas
-  const totalJobs = jobs.length;
+ 
+  // Candidaturas que han pasado por entrevista
+  const interviewIds = new Set(
+    history
+      .filter(
+        (entry) =>
+          entry.old_status === "interview" ||
+          entry.new_status === "interview"
+      )
+      .map((entry) => entry.job_id)
+  );
 
-  const sentJobs = jobs.filter(
-    (job) => job.status !== "pending"
-  ).length;
+  // Candidaturas que han recibido oferta
+  const offerIds = new Set(
+    history
+      .filter(
+        (entry) =>
+          entry.old_status === "offer" ||
+          entry.new_status === "offer"
+      )
+      .map((entry) => entry.job_id)
+  );
 
-  const interviewJobs = jobs.filter(
+  // Candidaturas con constancia de haber sido enviadas
+  const previouslySentIds = new Set(
+    history
+      .filter(
+        (entry) =>
+          entry.old_status !== "pending" ||
+          entry.new_status !== "pending"
+      )
+      .map((entry) => entry.job_id)
+  );
+
+  const sentPeriodJobs = periodJobs.filter(
+    (job) =>
+      job.status !== "pending" ||
+      previouslySentIds.has(job.id)
+  );
+
+  // Indicadores principales
+  const totalJobs = periodJobs.length;
+  const sentJobs = sentPeriodJobs.length;
+
+  const interviewJobs = periodJobs.filter(
     (job) => job.status === "interview"
   ).length;
 
-  const offerJobs = jobs.filter(
+  const offerJobs = periodJobs.filter(
     (job) => job.status === "offer"
   ).length;
+
+  // Conversiones históricas
+  const reachedInterview = sentPeriodJobs.filter(
+    (job) =>
+      job.status === "interview" ||
+      interviewIds.has(job.id)
+  ).length;
+
+  const reachedOffer = sentPeriodJobs.filter(
+    (job) =>
+      job.status === "offer" ||
+      offerIds.has(job.id)
+  ).length;
+
+  const interviewRate =
+    sentJobs === 0
+      ? null
+      : (reachedInterview / sentJobs) * 100;
+
+  const offerRate =
+    sentJobs === 0
+      ? null
+      : (reachedOffer / sentJobs) * 100;
 
   if (isPending) {
     return <p>Cargando estadísticas...</p>;
@@ -167,6 +271,31 @@ const statusChartData = jobStatuses.map((status) => ({
         </Link>
       </header>
 
+<div className="dashboard-period-filter">
+  <label htmlFor="dashboard-period">
+    Período de registro
+  </label>
+
+  <select
+    id="dashboard-period"
+    value={period}
+    onChange={(event) =>
+      setPeriod(
+        event.target.value as DashboardPeriod
+      )
+    }
+  >
+    <option value="all">Todo el período</option>
+    <option value="30">Últimos 30 días</option>
+    <option value="90">Últimos 90 días</option>
+  </select>
+
+  <p>
+    El filtro afecta a los indicadores y al gráfico
+    por estados.
+  </p>
+</div>
+
       <div className="dashboard-stats">
         <article className="dashboard-stat-card">
           <h2>Total candidaturas</h2>
@@ -197,11 +326,75 @@ const statusChartData = jobStatuses.map((status) => ({
         </article>
       </div>
 
+<section
+  className="dashboard-conversion"
+  aria-labelledby="conversion-title"
+>
+  <h2 id="conversion-title">
+    Tasas de conversión
+  </h2>
+
+  {historyLoading ? (
+    <p>Cargando historial...</p>
+  ) : historyError ? (
+    <div role="alert">
+      <p>
+        No se pudieron calcular las conversiones.
+      </p>
+
+      <button
+        type="button"
+        onClick={() => void refetchHistory()}
+      >
+        Reintentar
+      </button>
+    </div>
+  ) : (
+    <div className="dashboard-stats">
+      <article className="dashboard-stat-card">
+        <h3>Tasa de entrevistas</h3>
+
+        <p className="dashboard-stat-value">
+          {interviewRate === null
+            ? "—"
+            : `${interviewRate.toFixed(1)}%`}
+        </p>
+
+        <p>
+          {reachedInterview} de {sentJobs} enviadas
+        </p>
+      </article>
+
+      <article className="dashboard-stat-card">
+        <h3>Tasa de ofertas</h3>
+
+        <p className="dashboard-stat-value">
+          {offerRate === null
+            ? "—"
+            : `${offerRate.toFixed(1)}%`}
+        </p>
+
+        <p>
+          {reachedOffer} de {sentJobs} enviadas
+        </p>
+      </article>
+    </div>
+  )}
+</section>
+
 
 <section
   className="dashboard-chart-card"
   aria-labelledby="status-chart-title"
 >
+
+<section
+  className="dashboard-conversion"
+  aria-labelledby="conversion-title"
+>
+ 
+</section>
+
   <h2 id="status-chart-title">
     Candidaturas por estado
   </h2>
@@ -317,11 +510,9 @@ const statusChartData = jobStatuses.map((status) => ({
 </section>
 
 
-      {totalJobs === 0 && (
+      {jobs.length === 0 && (
         <div className="dashboard-empty">
-          <p>
-            Todavía no tienes candidaturas registradas.
-          </p>
+          <p>No hay candidaturas en el período seleccionado.</p>
           <Link to="/jobs/new">
             Crear primera candidatura
           </Link>
