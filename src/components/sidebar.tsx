@@ -1,38 +1,31 @@
+
 import { NavLink } from "react-router-dom";
 
-export function Sidebar(){
-   return <aside>
-    <nav>
-    <NavLink
-  to="/dashboard"
-  className={({ isActive }) => isActive ? "active" : ""}
->
-  Dashboard
-</NavLink>
-</nav>
-<nav>
- <NavLink
-  to="/jobs"
-  className={({ isActive }) => isActive ? "active" : ""}
->
-  Candidaturas
-</NavLink>
-</nav>
-<nav>
- <NavLink
-  to="/jobs/new"
-  className={({ isActive }) => isActive ? "active" : ""}
->
-  Nueva Candidatura
-</NavLink>
-</nav>
-<nav>
- <NavLink
-  to="/board"
-  className={({ isActive }) => isActive ? "active" : ""}
->
-  Kanban
-</NavLink>
-</nav>
-</aside>
+const navigation = [
+  { to: "/dashboard", label: "Dashboard" },
+  { to: "/jobs", label: "Candidaturas" },
+  { to: "/jobs/new", label: "Nueva candidatura" },
+  { to: "/board", label: "Kanban" },
+];
+
+export function Sidebar() {
+  return (
+    <nav
+      className="sidebar-nav"
+      aria-label="Navegación principal"
+    >
+      {navigation.map((item) => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end
+          className={({ isActive }) =>
+            isActive ? "active" : ""
+          }
+        >
+          {item.label}
+        </NavLink>
+      ))}
+    </nav>
+  );
 }

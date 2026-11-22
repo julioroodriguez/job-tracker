@@ -39,7 +39,18 @@ const columns: {
 ];
 
 // Tarjeta arrastrable
-function KanbanCard({ job }: { job: BoardJob }) {
+function KanbanCard({
+  job,
+  onChangeStatus,
+  isSaving,
+}: {
+  job: BoardJob;
+  onChangeStatus: (
+    jobId: string,
+    status: JobStatus
+  ) => void;
+  isSaving: boolean;
+}) {
   const {
     ref,
     handleRef,
@@ -72,6 +83,34 @@ function KanbanCard({ job }: { job: BoardJob }) {
         <p>{job.position}</p>
         <small>{job.location}</small>
       </Link>
+
+<div className="kanban-status-control">
+  <label htmlFor={`status-${job.id}`}>
+    Estado de {job.company}
+  </label>
+
+  <select
+    id={`status-${job.id}`}
+    value={job.status}
+    disabled={isSaving}
+    onChange={(event) =>
+      onChangeStatus(
+        job.id,
+        event.target.value as JobStatus
+      )
+    }
+  >
+    {columns.map((column) => (
+      <option
+        key={column.status}
+        value={column.status}
+      >
+        {column.title}
+      </option>
+    ))}
+  </select>
+</div>
+
     </article>
   );
 }
@@ -81,10 +120,17 @@ function KanbanColumn({
   status,
   title,
   jobs,
+  onChangeStatus,
+  isSaving,
 }: {
   status: JobStatus;
   title: string;
   jobs: BoardJob[];
+  onChangeStatus: (
+    jobId: string,
+    status: JobStatus
+  ) => void;
+  isSaving: boolean;
 }) {
   const { ref, isDropTarget } = useDroppable({
     id: status,
@@ -107,7 +153,12 @@ function KanbanColumn({
           <p className="kanban-empty">Sin candidaturas</p>
         ) : (
           jobs.map((job) => (
-            <KanbanCard key={job.id} job={job} />
+            <KanbanCard
+  key={job.id}
+  job={job}
+  onChangeStatus={onChangeStatus}
+  isSaving={isSaving}
+/>
           ))
         )}
       </div>
@@ -213,6 +264,30 @@ export function BoardPage() {
 
   const jobs: BoardJob[] = data ?? [];
 
+
+function changeStatus(
+  jobId: string,
+  status: JobStatus
+) {
+  const job = jobs.find(
+    (item) => item.id === jobId
+  );
+
+  if (
+    !job ||
+    job.status === status ||
+    moveJobMutation.isPending
+  ) {
+    return;
+  }
+
+  moveJobMutation.mutate({
+    jobId,
+    status,
+  });
+}
+
+
   // Aplicar cambios locales sin modificar Supabase
 
   if (isPending) {
@@ -274,7 +349,12 @@ export function BoardPage() {
   });
 }}
       >
-        <div className="kanban-board">
+        <div
+  className="kanban-board"
+  role="region"
+  aria-label="Tablero Kanban, desplazamiento horizontal"
+  tabIndex={0}
+>
           {columns.map((column) => {
            const columnJobs = jobs.filter(
   (job) => job.status === column.status
@@ -286,6 +366,8 @@ export function BoardPage() {
                 status={column.status}
                 title={column.title}
                 jobs={columnJobs}
+                onChangeStatus={changeStatus}
+isSaving={moveJobMutation.isPending}
               />
             );
           })}

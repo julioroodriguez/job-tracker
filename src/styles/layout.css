@@ -77,10 +77,6 @@ body {
   overflow-wrap: anywhere;
 }
 
-.active {
-    font-weight: 300;
-    color: #f8fafc;
-}
 
 /* Evita que las imágenes desborden el contenido */
 .page-content img,
@@ -109,4 +105,92 @@ body {
   font-weight: 500;
   margin-top: 6px;
   margin-bottom: 12px;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .app-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .sidebar-nav a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 44px;
+    padding: 10px 8px;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .app-header,
+  .page-content {
+    padding: 16px;
+  }
+}
+
+/* Móvil */
+@media (max-width: 540px) {
+  .sidebar-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sidebar-nav a {
+    font-size: 13px;
+  }
+
+  .page-content {
+    padding: 12px;
+  }
+}
+.page-content form {
+  width: 100%;
+  max-width: 720px;
+}
+
+.page-content form label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.page-content form input:not([type="checkbox"]),
+.page-content form select,
+.page-content form textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.page-content form textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.page-content form button {
+  min-height: 44px;
+  padding: 10px 16px;
+}
+
+.page-content :is(
+  a,
+  button,
+  input,
+  select,
+  textarea
+):focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
 }
