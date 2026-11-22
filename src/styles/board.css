@@ -1,19 +1,29 @@
-
 .kanban-board {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(230px, 1fr));
+  display: flex;
   gap: 16px;
+  width: 100%;
+  min-width: 0;
   overflow-x: auto;
-  padding: 16px 0;
+  padding: 16px 0 20px;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
 }
 
 .kanban-column {
+  flex: 0 0 250px;
+  min-width: 0;
   background: #e9edf3;
   border-radius: 12px;
   padding: 12px;
   min-height: 350px;
+  scroll-snap-align: start;
 }
 
+@media (max-width: 640px) {
+  .kanban-column {
+    flex-basis: min(82vw, 280px);
+  }
+}
 .kanban-column-header {
   display: flex;
   justify-content: space-between;
@@ -90,4 +100,31 @@
   display: block;
   font-weight: 500;
   margin: 12px 0;
+}
+
+.kanban-status-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.kanban-status-control label {
+  font-size: 12px;
+  color: #475569;
+}
+
+.kanban-status-control select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  background: white;
+}
+
+.kanban-board:focus-visible,
+.kanban-status-control select:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
 }
